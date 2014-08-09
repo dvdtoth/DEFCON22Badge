@@ -118,7 +118,7 @@ var
 
   long  ms001                                                   ' system ticks per millisecond
   long  us001                                                   ' system ticks per microsecond
-
+  long  varrx   
 
 pub main | idx, last, button
            
@@ -128,7 +128,7 @@ pub main | idx, last, button
                                                     
   irtx.start(IR_OUT, IR_FREQ)
   
-  irrx.start(IR_IN)
+  irrx.start(IR_IN)                   
   ircog := cognew(recv, @irstack) + 1
   
   'repeat until (read_pads <> %0000)                             ' wait for a pad press
@@ -191,8 +191,12 @@ pub main | idx, last, button
 pub recv
     repeat
       irrx.start(IR_IN)
-      irrx.enable           
-      term.hex(irrx.rx, 255)
+      irrx.enable
+      varrx := irrx.rx
+              
+      term.hex(varrx, 255)
+      if (varrx == $0000DC22)
+        start_animation(@Code, 0)
       
 
 pub send
@@ -275,7 +279,6 @@ var
   long  ircog                                                  ' cog running animation
   long  anistack[32]                                            ' stack space for Spin cog
   long  irstack[32]                                            ' stack space for Spin cog
-  long  handles
                                  
 pri start_animation(p_table, cycles)
 
@@ -285,7 +288,7 @@ pri start_animation(p_table, cycles)
 '' -- set cycles to 0 to run without stopping
 
   stop_animation
-  
+                                                                  
   anicog := cognew(run_animation(p_table, cycles), @anistack) + 1  
 
   return anicog                                                 ' return cog used
@@ -327,6 +330,12 @@ dat
   ' -- 1st byte is number of steps in animation sequence
   ' -- each step holds pattern and hold time (ms)
   ' -- for delays > 255, duplicate pattern + delay
+
+  Code        byte      (@Code_X - @Code) / 2 + 1 
+              byte      %11111111, 15    
+              byte      %00000000, 15           
+              byte      %11111111, 15    
+  Code_X      byte      %00000000, 15
 
   MXB1        byte      (@MXB1_X - @MXB1) / 2 + 1 
               byte      %11111111, 15    
@@ -408,12 +417,22 @@ dat
                                         
                      
   InOut       byte      (@InOut_X - @InOut) / 2 + 1  
+              byte      %11111111, 100
+              byte      %11111111, 100
+              byte      %11100111, 100
+              byte      %11000011, 100
               byte      %10000001, 100
-              byte      %01000010, 100
-              byte      %00100100, 100
-              byte      %00011000, 100
-              byte      %00100100, 100
-  InOut_X     byte      %01000010, 100
+              byte      %00000000, 254
+              byte      %00000000, 254
+              byte      %10000001, 100
+              byte      %11000011, 100
+              byte      %11100111, 100
+              byte      %11111111, 100
+              byte      %11100111, 100
+              byte      %11000011, 100
+              byte      %10000001, 100
+              byte      %00000000, 100
+  InOut_X     byte      %11111111, 100
 
           
   Police      byte      (@Police_X - @Police) / 2 + 1 
